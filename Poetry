@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poetry Showcase</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #5D5CDE;
+            --text-color: #333;
+            --bg-color: #fff;
+            --card-bg: #f8f8f8;
+            --card-border: #eee;
+            --poem-font: 'Playfair Display', serif;
+            --body-font: 'Lora', serif;
+        }
+        
+        .dark {
+            --text-color: #e0e0e0;
+            --bg-color: #181818;
+            --card-bg: #2a2a2a;
+            --card-border: #3a3a3a;
+        }
+        
+        body {
+            font-family: var(--body-font);
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        .poem-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .poem-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        .poem-content {
+            font-family: var(--poem-font);
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-primary:hover {
+            background-color: #4a49b7;
+        }
+        
+        .btn-secondary {
+            background-color: #f3f4f6;
+            color: #374151;
+            transition: background-color 0.2s;
+        }
+        
+        .dark .btn-secondary {
+            background-color: #374151;
+            color: #f3f4f6;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #e5e7eb;
+        }
+        
+        .dark .btn-secondary:hover {
+            background-color: #4b5563;
+        }
+        
+        .modal {
+            background-color: var(--bg-color);
+            border: 1px solid var(--card-border);
+        }
+        
+        .fadeIn {
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .msg-notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 4px;
+            z-index: 100;
+            transition: transform 0.3s, opacity 0.3s;
+            transform: translateY(100px);
+            opacity: 0;
+        }
+        
+        .msg-notification.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div id="msg-notification" class="msg-notification"></div>
+    
+    <!-- Navigation -->
+    <nav class="bg-white shadow-md dark:bg-gray-800 dark:text-white sticky top-0 z-10">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex justify-between items-center">
+                <div>
+                    <a href="#" id="home-link" class="text-2xl font-bold text-primary-600 dark:text-primary-300" style="color: var(--primary-color);">Poetry Showcase</a>
+                </div>
+                <div class="space-x-4 flex items-center">
+                    <a href="#" id="search-nav" class="hover:text-primary-500 dark:hover:text-primary-300">Search</a>
+                    <a href="#" id="about-nav" class="hover:text-primary-500 dark:hover:text-primary-300">About</a>
+                    <a href="#" id="contact-nav" class="hover:text-primary-500 dark:hover:text-primary-300">Contact</a>
+                    <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Admin Panel (initially hidden) -->
+    <div id="admin-panel" class="hidden bg-gray-100 dark:bg-gray-900 p-4 border-b border-gray-200 dark:border-gray-700">
+        <div class="container mx-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold">Admin Panel</h2>
+                <div>
+                    <button id="add-poem-btn" class="btn-primary px-4 py-2 rounded-lg mr-2">Add New Poem</button>
+                    <button id="exit-admin-btn" class="btn-secondary px-4 py-2 rounded-lg">Exit Admin Mode</button>
+                </div>
+            </div>
+            <p class="text-sm text-gray-600 dark:text-gray-400">You can now add, edit, and delete poems.</p>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Home Section -->
+        <section id="home-section" class="fadeIn">
+            <h1 class="text-3xl md:text-4xl font-bold mb-8 text-center" style="font-family: var(--poem-font);">Welcome to Poetry Showcase</h1>
+            
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-semibold">Featured Poems</h2>
+                <div class="relative">
+                    <input type="text" id="search-input" placeholder="Search poems..." class="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-base focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    <button id="search-btn" class="absolute right-2 top-1/2 transform -translate-y-1/2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <div id="poems-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Poems will be loaded here dynamically -->
+            </div>
+        </section>
+
+        <!-- Single Poem View -->
+        <section id="poem-view-section" class="hidden fadeIn">
+            <button id="back-to-poems" class="mb-6 flex items-center text-primary-600 dark:text-primary-400 hover:underline" style="color: var(--primary-color);">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to all poems
+            </button>
+            
+            <div class="max-w-3xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+                <div class="p-6 md:p-8">
+                    <h2 id="view-poem-title" class="text-3xl font-bold mb-3" style="font-family: var(--poem-font);"></h2>
+                    <div id="admin-buttons" class="hidden mb-4">
+                        <button id="edit-poem-btn" class="btn-primary px-3 py-1 rounded-md mr-2 text-sm">Edit</button>
+                        <button id="delete-poem-btn" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm">Delete</button>
+                    </div>
+                    <div id="view-poem-content" class="poem-content text-lg mt-6"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section id="about-section" class="hidden fadeIn max-w-3xl mx-auto">
+            <h2 class="text-3xl font-bold mb-6 text-center" style="font-family: var(--poem-font);">About the Creator</h2>
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 md:p-8">
+                <p class="mb-4">Welcome to Poetry Showcase, a place dedicated to the beauty of written words and poetic expression.</p>
+                <p class="mb-4">As the creator of this space, I'm passionate about poetry in all its forms and wanted to create a platform where beautiful verses can be shared and appreciated by all.</p>
+                <p class="mb-4">Whether you're an experienced poet or simply appreciate the art of poetry, I hope you find inspiration and enjoyment here.</p>
+                <div class="mt-8">
+                    <h3 class="text-xl font-semibold mb-3">Connect With Me</h3>
+                    <p class="mb-2">
+                        <span class="font-semibold">Email:</span> 
+                        <a href="mailto:Yobatic@gmail.com" class="text-blue-600 dark:text-blue-400 hover:underline">Yobatic@gmail.com</a>
+                    </p>
+                    <p>
+                        <span class="font-semibold">Telegram:</span> 
+                        <a href="tg://resolve?domain=Phantom_Troupeee" class="text-blue-600 dark:text-blue-400 hover:underline">@Phantom_Troupeee</a>
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact-section" class="hidden fadeIn max-w-3xl mx-auto">
+            <h2 class="text-3xl font-bold mb-6 text-center" style="font-family: var(--poem-font);">Contact Me</h2>
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 md:p-8">
+                <form id="contact-form" class="space-y-4">
+                    <div>
+                        <label for="name" class="block text-sm font-medium mb-1">Your Name</label>
+                        <input type="text" id="name" name="name" required class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-base focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    </div>
+                    <div>
+                        <label for="email" class="block text-sm font-medium mb-1">Your Email</label>
+                        <input type="email" id="email" name="email" required class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-base focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    </div>
+                    <div>
+                        <label for="message" class="block text-sm font-medium mb-1">Your Message</label>
+                        <textarea id="message" name="message" rows="5" required class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-base focus:outline-none focus:ring-2 focus:ring-primary-500"></textarea>
+                    </div>
+                    <button type="submit" class="btn-primary px-6 py-3 rounded-lg w-full">Send Message</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modals -->
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="modal bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full">
+            <h3 class="text-xl font-bold mb-4">Admin Login</h3>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label for="username" class="block text-sm font-medium mb-1">Username</label>
+                    <input type="text" id="username" name="username" required class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-base">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium mb-1">Password</label>
+                    <input type="password" id="password" name="password" required class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-base">
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" id="cancel-login" class="btn-secondary px-4 py-2 rounded-lg">Cancel</button>
+                    <button type="submit" class="btn-primary px-4 py-2 rounded-lg">Login</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add/Edit Poem Modal -->
+    <div id="poem-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="modal bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-3xl w-full">
+            <h3 id="poem-modal-title" class="text-xl font-bold mb-4">Add New Poem</h3>
+            <form id="poem-form" class="space-y-4">
+                <input type="hidden" id="poem-id">
+                <div>
+                    <label for="poem-title" class="block text-sm font-medium mb-1">Title</label>
+                    <input type="text" id="poem-title" name="poem-title" required class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-base">
+                </div>
+                <div>
+                    <label for="poem-content" class="block text-sm font-medium mb-1">Content</label>
+                    <textarea id="poem-content" name="poem-content" rows="10" required class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-base font-mono"></textarea>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" id="cancel-poem" class="btn-secondary px-4 py-2 rounded-lg">Cancel</button>
+                    <button type="submit" class="btn-primary px-4 py-2 rounded-lg">Save Poem</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="modal bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full">
+            <h3 class="text-xl font-bold mb-4">Confirm Deletion</h3>
+            <p class="mb-6">Are you sure you want to delete this poem? This action cannot be undone.</p>
+            <div class="flex justify-end space-x-3">
+                <button id="cancel-delete" class="btn-secondary px-4 py-2 rounded-lg">Cancel</button>
+                <button id="confirm-delete" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check for dark mode preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+        
+        // Initial poem data
+        const initialPoems = [
+            {
+                id: 1,
+                title: "Peony🌸",
+                content: "She's cool you know not like the others\nCalm and collected, Cheerful is a trait of hers\nNever chose war when peace was a step away\nHer smile peak of spring, blooming flowers of may \nAnd that's why I keep her closely to my heart \nCause without her everything falls apart."
+            },
+            {
+                id: 2,
+                title: "Your voice, my symphony",
+                content: "Tuned to utmost perfection \nGod's finest creation,\nA melody close to my heart\nMore precious than any art,\nYour words, few yet deep\nThey play in my head when im asleep.\n\nI'll adore you forever, my dear\nStay by my side and always near,\nYour voice, my symphony \nYour tears, my misery,\nThere's no one but you and me\nAnd that's how we'll for-ever be."
+            }
+        ];
+        
+        // App state
+        let poems = [...initialPoems];
+        let isAdmin = false;
+        let currentPoemId = null;
+        let clickCounter = {};
+        let savedMessages = [];
+        
+        // DOM Elements
+        const homeSection = document.getElementById('home-section');
+        const poemViewSection = document.getElementById('poem-view-section');
+        const aboutSection = document.getElementById('about-section');
+        const contactSection = document.getElementById('contact-section');
+        const adminPanel = document.getElementById('admin-panel');
+        const poemsContainer = document.getElementById('poems-container');
+        const adminButtons = document.getElementById('admin-buttons');
+        const loginModal = document.getElementById('login-modal');
+        const poemModal = document.getElementById('poem-modal');
+        const deleteModal = document.getElementById('delete-modal');
+        const msgNotification = document.getElementById('msg-notification');
+        
+        // Navigation
+        document.getElementById('home-link').addEventListener('click', (e) => {
+            e.preventDefault();
+            showSection(homeSection);
+            renderPoems(poems);
+        });
+        
+        document.getElementById('search-nav').addEventListener('click', (e) => {
+            e.preventDefault();
+            showSection(homeSection);
+            document.getElementById('search-input').focus();
+        });
+        
+        document.getElementById('about-nav').addEventListener('click', (e) => {
+            e.preventDefault();
+            showSection(aboutSection);
+        });
+        
+        document.getElementById('contact-nav').addEventListener('click', (e) => {
+            e.preventDefault();
+            showSection(contactSection);
+        });
+        
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+        });
+        
+        document.getElementById('back-to-poems').addEventListener('click', (e) => {
+            e.preventDefault();
+            showSection(homeSection);
+            renderPoems(poems);
+        });
+        
+        // Admin functions
+        document.getElementById('add-poem-btn').addEventListener('click', () => {
+            document.getElementById('poem-modal-title').textContent = 'Add New Poem';
+            document.getElementById('poem-id').value = '';
+            document.getElementById('poem-title').value = '';
+            document.getElementById('poem-content').value = '';
+            poemModal.classList.remove('hidden');
+        });
+        
+        document.getElementById('exit-admin-btn').addEventListener('click', () => {
+            isAdmin = false;
+            adminPanel.classList.add('hidden');
+            adminButtons.classList.add('hidden');
+        });
+        
+        document.getElementById('edit-poem-btn').addEventListener('click', () => {
+            const poem = poems.find(p => p.id === currentPoemId);
+            if (poem) {
+                document.getElementById('poem-modal-title').textContent = 'Edit Poem';
+                document.getElementById('poem-id').value = poem.id;
+                document.getElementById('poem-title').value = poem.title;
+                document.getElementById('poem-content').value = poem.content;
+                poemModal.classList.remove('hidden');
+            }
+        });
+        
+        document.getElementById('delete-poem-btn').addEventListener('click', () => {
+            deleteModal.classList.remove('hidden');
+        });
+        
+        // Modal interactions
+        document.getElementById('cancel-login').addEventListener('click', () => {
+            loginModal.classList.add('hidden');
+        });
+        
+        document.getElementById('cancel-poem').addEventListener('click', () => {
+            poemModal.classList.add('hidden');
+        });
+        
+        document.getElementById('cancel-delete').addEventListener('click', () => {
+            deleteModal.classList.add('hidden');
+        });
+        
+        document.getElementById('confirm-delete').addEventListener('click', () => {
+            deletePoem(currentPoemId);
+            deleteModal.classList.add('hidden');
+            showSection(homeSection);
+            renderPoems(poems);
+            showNotification('Poem deleted successfully');
+        });
+        
+        // Form submissions
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (username === 'Yoba' && password === "Yoba's online poem web owner password for the website that only me and i know") {
+                isAdmin = true;
+                adminPanel.classList.remove('hidden');
+                if (currentPoemId) {
+                    adminButtons.classList.remove('hidden');
+                }
+                loginModal.classList.add('hidden');
+                showNotification('Welcome back, admin!');
+            } else {
+                showNotification('Invalid credentials', true);
+            }
+        });
+        
+        document.getElementById('poem-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const poemId = document.getElementById('poem-id').value;
+            const title = document.getElementById('poem-title').value;
+            const content = document.getElementById('poem-content').value;
+            
+            if (poemId) {
+                // Edit existing poem
+                updatePoem(parseInt(poemId), title, content);
+                showNotification('Poem updated successfully');
+            } else {
+                // Add new poem
+                addPoem(title, content);
+                showNotification('New poem added successfully');
+            }
+            
+            poemModal.classList.add('hidden');
+            renderPoems(poems);
+            
+            if (currentPoemId) {
+                viewPoem(currentPoemId);
+            } else {
+                showSection(homeSection);
+            }
+        });
+        
+        document.getElementById('contact-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const message = document.getElementById('message').value;
+            
+            // Save message to the "database"
+            savedMessages.push({ name, email, message, date: new Date().toISOString() });
+            
+            // Open email client with pre-filled message
+            const subject = `Message from ${name} via Poetry Showcase`;
+            const body = `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`;
+            window.location.href = `mailto:Yobatic@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            
+            // Reset form
+            document.getElementById('contact-form').reset();
+            showNotification('Message sent successfully!');
+        });
+        
+        // Search functionality
+        document.getElementById('search-btn').addEventListener('click', performSearch);
+        document.getElementById('search-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+        
+        function performSearch() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            if (searchTerm.trim() === '') {
+                renderPoems(poems);
+                return;
+            }
+            
+            const filteredPoems = poems.filter(poem => 
+                poem.title.toLowerCase().includes(searchTerm) || 
+                poem.content.toLowerCase().includes(searchTerm)
+            );
+            
+            renderPoems(filteredPoems);
+        }
+        
+        // Poem Management Functions
+        function addPoem(title, content) {
+            const newId = poems.length > 0 ? Math.max(...poems.map(p => p.id)) + 1 : 1;
+            const newPoem = {
+                id: newId,
+                title,
+                content
+            };
+            
+            poems.push(newPoem);
+        }
+        
+        function updatePoem(id, title, content) {
+            const index = poems.findIndex(p => p.id === id);
+            if (index !== -1) {
+                poems[index] = {
+                    ...poems[index],
+                    title,
+                    content
+                };
+                
+                if (currentPoemId === id) {
+                    viewPoem(id);
+                }
+            }
+        }
+        
+        function deletePoem(id) {
+            poems = poems.filter(p => p.id !== id);
+            if (currentPoemId === id) {
+                currentPoemId = null;
+            }
+        }
+        
+        function viewPoem(id) {
+            const poem = poems.find(p => p.id === id);
+            if (!poem) return;
+            
+            currentPoemId = id;
+            document.getElementById('view-poem-title').textContent = poem.title;
+            document.getElementById('view-poem-content').textContent = poem.content;
+            
+            if (isAdmin) {
+                adminButtons.classList.remove('hidden');
+            } else {
+                adminButtons.classList.add('hidden');
+            }
+            
+            showSection(poemViewSection);
+        }
+        
+        // Render poems to the DOM
+        function renderPoems(poemsToRender) {
+            poemsContainer.innerHTML = '';
+            
+            if (poemsToRender.length === 0) {
+                poemsContainer.innerHTML = `
+                    <div class="col-span-full text-center py-8">
+                        <p class="text-lg text-gray-600 dark:text-gray-400">No poems found. Try a different search term.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            poemsToRender.forEach(poem => {
+                const card = document.createElement('div');
+                card.className = 'poem-card rounded-lg overflow-hidden transition-shadow hover:shadow-lg p-5';
+                
+                // Get a preview of the poem content (first few lines)
+                const contentPreview = poem.content.split('\n').slice(0, 3).join('\n') + 
+                    (poem.content.split('\n').length > 3 ? '\n...' : '');
+                
+                card.innerHTML = `
+                    <h3 class="text-xl font-bold mb-3 poem-title" data-id="${poem.id}">${poem.title}</h3>
+                    <div class="poem-content text-sm mb-4">${contentPreview}</div>
+                    <button class="read-more text-sm text-primary-600 dark:text-primary-400 hover:underline" data-id="${poem.id}" style="color: var(--primary-color);">
+                        Read more
+                    </button>
+                `;
+                
+                poemsContainer.appendChild(card);
+                
+                // Add click event for the title (for admin login)
+                const titleElement = card.querySelector('.poem-title');
+                titleElement.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    handleTitleClick(poem.id);
+                });
+                
+                // Add click event for the read more button
+                const readMoreBtn = card.querySelector('.read-more');
+                readMoreBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    viewPoem(poem.id);
+                });
+            });
+        }
+        
+        // Handle title clicks (for admin login)
+        function handleTitleClick(id) {
+            if (!clickCounter[id]) {
+                clickCounter[id] = 0;
+            }
+            
+            clickCounter[id]++;
+            
+            if (clickCounter[id] === 5) {
+                clickCounter[id] = 0;
+                loginModal.classList.remove('hidden');
+            }
+        }
+        
+        // Helper Functions
+        function showSection(section) {
+            // Hide all sections
+            homeSection.classList.add('hidden');
+            poemViewSection.classList.add('hidden');
+            aboutSection.classList.add('hidden');
+            contactSection.classList.add('hidden');
+            
+            // Show the requested section
+            section.classList.remove('hidden');
+        }
+        
+        function showNotification(message, isError = false) {
+            msgNotification.textContent = message;
+            msgNotification.classList.add(isError ? 'bg-red-600' : 'bg-primary-600');
+            msgNotification.classList.remove(isError ? 'bg-primary-600' : 'bg-red-600');
+            msgNotification.classList.add('show');
+            
+            setTimeout(() => {
+                msgNotification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Initialize the app
+        function init() {
+            renderPoems(poems);
+        }
+        
+        // Start the app
+        init();
+    </script>
+</body>
+</html>
